@@ -1,5 +1,6 @@
 import connectMongoDB from "@/libs/mongodb";
 import Driver from "@/models/driver";
+import Transaction from "@/models/transaction";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
@@ -17,7 +18,9 @@ export async function GET() {
 
 export async function DELETE(request) {
   const id = request.nextUrl.searchParams.get("id");
+  const query = id ? { driverId: id } : {};
   await connectMongoDB();
   await Driver.findByIdAndDelete(id);
+  await Transaction.deleteMany(query);
   return NextResponse.json({ message: "Driver deleted" }, { status: 200 });
 }

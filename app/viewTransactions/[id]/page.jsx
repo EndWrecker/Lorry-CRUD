@@ -5,7 +5,6 @@ import { use } from "react";
 import Link from "next/link";
 
 export default function ViewTransactions({ params }) {
-  // Properly unwrap the params promise using React.use
   const unwrappedParams = use(params);
   const id = unwrappedParams?.id;
 
@@ -14,10 +13,10 @@ export default function ViewTransactions({ params }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTransaction, setNewTransaction] = useState({
     amount: "",
-    type: "credit", // Added this to initialize the description field
+    type: "credit",
   });
+  const [editingTransaction, setEditingTransaction] = useState(null);
 
-  // Fetch transactions on component mount
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
@@ -75,7 +74,6 @@ export default function ViewTransactions({ params }) {
         const result = await res.json();
         setTransactions([...transactions, result]);
         setNewTransaction({ amount: "", type: "credit" });
-        // Hide the form
         setShowAddForm(false);
       }
     } catch (error) {
@@ -91,12 +89,54 @@ export default function ViewTransactions({ params }) {
         });
 
         if (res.ok) {
-          // Remove the deleted transaction from the list
           setTransactions(transactions.filter((t) => t._id !== transactionId));
         }
       } catch (error) {
         console.error("Error deleting transaction:", error);
       }
+    }
+  };
+
+  const handleEditTransaction = (transaction) => {
+    setEditingTransaction(transaction);
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditingTransaction({
+      ...editingTransaction,
+      [name]: value,
+    });
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await fetch(
+        `http://localhost:3000/api/transactions/${editingTransaction._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editingTransaction),
+        }
+      );
+      console.log(editingTransaction);
+
+      if (res.ok) {
+        setTransactions(
+          transactions.map((t) =>
+            t._id === editingTransaction._id ? editingTransaction : t
+          )
+        );
+        console.log(transactions);
+
+        setEditingTransaction(null);
+      }
+    } catch (error) {
+      console.error("Error updating transaction:", error);
     }
   };
 
@@ -125,31 +165,96 @@ export default function ViewTransactions({ params }) {
                 key={t?._id}
                 className="flex justify-around items-center px-8 py-3 border-b"
               >
-                <div
-                  className={
-                    t && t.type === "credit" ? "text-green-600" : "text-red-600"
-                  }
-                >
-                  {t && t.type === "credit" ? "+" : "-"} $
-                  {t && parseFloat(t.amount).toFixed(2)}
-                  {t && t.description && (
-                    <div className="text-sm text-gray-500">{t.description}</div>
-                  )}
-                </div>
-                <div className="flex space-x-2">
-                  <Link
-                    href={`/editTransaction/`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    Edit
-                  </Link>
-                  <button
-                    onClick={() => handleDeleteTransaction(t._id)}
-                    className="text-red-600 hover:underline"
-                  >
-                    Delete
-                  </button>
-                </div>
+                {editingTransaction && editingTransaction._id === t._id ? (
+                  <form onSubmit={handleEditSubmit} className="w-full">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <label
+                          htmlFor="amount"
+                          className="block text-sm text-gray-700 mb-1"
+                        >
+                          Amount
+                        </label>
+                        <input
+                          type="number"
+                          id="amount"
+                          name="amount"
+                          value={editingTransaction.amount}
+                          onChange={handleEditInputChange}
+                          className="w-full px-3 py-2 border rounded-md"
+                          step="0.01"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="type"
+                          className="block text-sm text-gray-700 mb-1"
+                        >
+                          Type
+                        </label>
+                        <select
+                          id="type"
+                          name="type"
+                          value={editingTransaction.type}
+                          onChange={handleEditInputChange}
+                          className="w-full px-3 py-2 border rounded-md"
+                          required
+                        >
+                          <option value="credit">Credit</option>
+                          <option value="debit">Debit</option>
+                        </select>
+                      </div>
+                      <div className="flex items-end space-x-2">
+                        <button
+                          type="submit"
+                          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingTransaction(null)}
+                          className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div
+                      className={
+                        t && t.type === "credit"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }
+                    >
+                      {t && t.type === "credit" ? "+" : "-"} $
+                      {t && parseFloat(t.amount).toFixed(2)}
+                      {t && t.description && (
+                        <div className="text-sm text-gray-500">
+                          {t.description}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEditTransaction(t)}
+                        className="text-blue-600 hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTransaction(t._id)}
+                        className="text-red-600 hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))
           : !showAddForm && (
@@ -158,7 +263,6 @@ export default function ViewTransactions({ params }) {
               </div>
             )}
 
-        {/* Inline Add Transaction Form */}
         {showAddForm && (
           <form
             onSubmit={handleAddTransaction}
@@ -183,7 +287,6 @@ export default function ViewTransactions({ params }) {
                   required
                 />
               </div>
-
               <div>
                 <label
                   htmlFor="type"
@@ -203,7 +306,6 @@ export default function ViewTransactions({ params }) {
                   <option value="debit">Debit</option>
                 </select>
               </div>
-
               <div className="flex items-end">
                 <button
                   type="submit"
