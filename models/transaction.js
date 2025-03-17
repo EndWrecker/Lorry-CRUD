@@ -2,12 +2,17 @@ import mongoose, { Schema } from "mongoose";
 
 const transactionSchema = new Schema(
   {
+    driverId: String,
     amount: Number,
-    credit: Boolean,
+    type: String,
   },
   {
     timestamps: true,
   }
 );
 
-export default transactionSchema;
+const Transaction =
+  mongoose.models.Transaction ||
+  mongoose.model("Transaction", transactionSchema);
+
+export default Transaction;

@@ -23,7 +23,9 @@ export default async function DriverList() {
       {drivers.map((t) => (
         <div className="p-4 border border-slate-300 my-3 flex justify-between gap-5 items-start">
           <div>
-            <h2 className="font-bold text-2xl">{t.name}</h2>
+            <Link href={`/editDriver/${t._id}`}>
+              <h2 className="font-bold text-2xl">{t.name}</h2>
+            </Link>
             <div>Driver Vehicle</div>
           </div>
 
@@ -32,6 +34,7 @@ export default async function DriverList() {
             <Link href={`/editDriver/${t._id}`}>
               <HiPencilAlt size={24}></HiPencilAlt>
             </Link>
+            <Link href={`/viewTransactions/${t._id}`}>View Transactions</Link>
           </div>
         </div>
       ))}

@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import transactionSchema from "./transaction";
+
 const driverSchema = new Schema(
   {
     name: String,
